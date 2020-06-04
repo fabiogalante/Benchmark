@@ -1,11 +1,11 @@
-﻿using System;
+﻿using RestSharp;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
-using RestSharp;
 
 namespace Benchmark
 {
@@ -23,7 +23,7 @@ namespace Benchmark
 
             var stopWatch = new Stopwatch();
             stopWatch.Start();
-            for (var i = 0; i < 10; ++i)
+            for (var i = 0; i < 3; ++i)
             {
                 CallGetWebRequest();
                 CallPostWebRequest();
@@ -34,22 +34,10 @@ namespace Benchmark
             Console.WriteLine($"{webRequesttValue} ====> WebRequest (API FUNDOS)");
 
 
-            stopWatch = new Stopwatch();
-            stopWatch.Start();
-            for (var i = 0; i < 10; ++i)
-            {
-                CallGetHttpClient();
-                CallPostHttpClient();
-            }
-
-            stopWatch.Stop();
-            var httpClientValue = stopWatch.Elapsed;
-            Console.WriteLine($"{httpClientValue} ====> HttpClient");
-
 
             stopWatch = new Stopwatch();
             stopWatch.Start();
-            for (var i = 0; i < 10; ++i)
+            for (var i = 0; i < 3; ++i)
             {
                 CallGetWebClient();
                 CallPostWebClient();
@@ -64,7 +52,24 @@ namespace Benchmark
 
             stopWatch = new Stopwatch();
             stopWatch.Start();
-            for (var i = 0; i < 10; ++i)
+            for (var i = 0; i < 3; ++i)
+            {
+                CallGetHttpClient();
+                CallPostHttpClient();
+            }
+
+            stopWatch.Stop();
+            var httpClientValue = stopWatch.Elapsed;
+            Console.WriteLine($"{httpClientValue} ====> HttpClient (Pagamento)");
+
+
+
+
+
+
+            stopWatch = new Stopwatch();
+            stopWatch.Start();
+            for (var i = 0; i < 3; ++i)
             {
                 CallGeRestSharp();
                 CallPostRestSharp();
@@ -74,9 +79,12 @@ namespace Benchmark
             var webRestSharp = stopWatch.Elapsed;
 
             Console.WriteLine($"{webRestSharp} ====> RestSharp ");
+
+            Console.ReadKey();
         }
 
 
+        
         #region WebRequest
 
 
@@ -84,17 +92,6 @@ namespace Benchmark
 
         private static string CallPostWebRequest()
         {
-
-
-            //No princípio as classes padrão para consumir requisições HTTP eram : HttpWebRequest e HttpWebResponse que
-            //implementam as interfaces WebRequest e WebResponse.
-            //    A classe HttpWebRequest lhe dá controle em cada aspecto do objeto request/ response como: timeouts, headers, 
-            //protocols, etc.além de não bloquear a thread da interface com o usuário.
-            //    Dessa forma a classe HttpWebRequest fornece suporte para as propriedades e métodos definidos na classe
-            //    WebRequest e para propriedades e métodos adicionais que permitem interagir usando o protocolo HTTP.tocolo HTTP.
-
-
-
             const string apiUrl = "http://10.167.0.203:6450/api/v2/Rentabilidade/calcula-rentabilidade-historica";
 
             var encoding = new UTF8Encoding(false);
@@ -105,7 +102,7 @@ namespace Benchmark
 
 
 
-            var data = encoding.GetBytes("[24433]");
+            var data = encoding.GetBytes("[24433,582589]");
             webRequest.ContentLength = data.Length;
 
             using (Stream requestStream = webRequest.GetRequestStream())
@@ -116,8 +113,6 @@ namespace Benchmark
                 using (var streamReader = new StreamReader(webResponse.GetResponseStream()))
                     return streamReader.ReadToEnd();
             }
-
-
         }
 
 
@@ -164,7 +159,7 @@ namespace Benchmark
             using (var client = new WebClient
                 {Headers = {["Content-type"] = "application/json"}, Encoding = Encoding.UTF8})
             {
-                json = client.UploadString(apiUrl, "[24433]");
+                json = client.UploadString(apiUrl, "[24433,582589]");
             }
 
             return json;
@@ -184,7 +179,7 @@ namespace Benchmark
 
         #region HttpClient
 
-        //A classe HttpClient fornece poderosas funcionalidades e uma sintaxe melhor para os novos recursos da threading como 
+        //A classe HttpClient fornece poderosas funcionalidades e uma sintaxe melhor para os novos recursos da threading como
         //    dar suporte a await, além de habilitar o download em threads com melhor verificação e validação de código.
 
 
@@ -210,9 +205,8 @@ namespace Benchmark
             Task<HttpResponseMessage> responseTask;
             using (var httpClient = new HttpClient())
             {
-                HttpContent content = new StringContent("[24433]", Encoding.UTF8, "application/json");
-                responseTask =
-                    httpClient.PostAsync(
+                HttpContent content = new StringContent("[24433,582589]", Encoding.UTF8, "application/json");
+                responseTask = httpClient.PostAsync(
                         "http://10.167.0.203:6450/api/v2/Rentabilidade/calcula-rentabilidade-historica", content);
                 responseTask.Wait();
             }
@@ -244,7 +238,7 @@ namespace Benchmark
         {
             var client = new RestClient("http://10.167.0.203:6450/api/v2/Rentabilidade/calcula-rentabilidade-historica");
             var request = new RestRequest(Method.POST);
-            request.AddParameter("application/json; charset=utf-8", "[24433]", ParameterType.RequestBody);
+            request.AddParameter("application/json; charset=utf-8", "[24433,582589]", ParameterType.RequestBody);
             var response = client.Execute(request);
         }
 
